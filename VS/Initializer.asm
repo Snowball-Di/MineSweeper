@@ -8,6 +8,25 @@ srand  PROTO C :DWORD
 rand   PROTO C 
 time   PROTO C :DWORD
 
+
+extrn  	    gameState:dword
+extrn		flaggedMines :dword
+extrn		remainingMines:dword
+extrn		exploredCells :dword
+extrn		realBoard     :byte
+extrn		playBoard     :byte
+extrn		hintBoard     :byte
+extrn		row_directions :dword
+extrn		col_directions:dword
+extrn		mine_total    :dword
+extrn		Board_column  :dword
+extrn		Board_row     :dword
+extrn		Clicked_column:dword
+extrn		Clicked_row   :dword
+
+
+
+
 public Initializing
 .data
 
@@ -22,6 +41,7 @@ Initializing   proc
     LOCAL COLUMN: DWORD
     LOCAL ROW_MAX: DWORD
     LOCAL COL_MAX: DWORD
+    LOCAL Clicked_point: DWORD
     
     push eax
 	push ebx
@@ -30,15 +50,29 @@ Initializing   proc
     push esi
     push edi
 	
+    xor edx,edx
+    mov eax,Clicked_row
+    mul Board_column
+    add eax,Clicked_column
+    mov Clicked_point,eax
+    xor eax,eax
+
+
     invoke time,0
     invoke srand,eax
+
+
+    xor edx,edx
+    mov eax,Board_column
+    MUL Board_row
+    mov TOTAL_SCALE,eax
 
     xor esi,esi
     .while esi < mine_total
         USED:
         invoke rand
         xor    edx,edx
-        div    mine_total
+        div    TOTAL_SCALE
         mov    POSITION,edx
 
         cmp    edx,Clicked_point
@@ -54,10 +88,7 @@ Initializing   proc
 
     xor esi,esi
 
-    xor edx,edx
-    mov eax,Board_column
-    MUL Board_row
-    mov TOTAL_SCALE,eax
+
 
     mov ecx, Board_column
     dec ecx
@@ -79,7 +110,7 @@ Initializing   proc
    
         .IF eax != 0 
             .IF edx != 0
-                mov ebx, eax
+                mov ebx, esi
                 sub ebx, Board_column
                 dec ebx
                 .IF byte ptr [realBoard+ebx]==MINE
@@ -88,7 +119,7 @@ Initializing   proc
                 .ENDIF
             .ENDIF
 
-            mov ebx, eax
+            mov ebx, esi
             sub ebx, Board_column
             .IF byte ptr [realBoard+ebx]==MINE
                 mov ecx, esi
@@ -96,7 +127,7 @@ Initializing   proc
             .ENDIF
 
             .IF edx != COL_MAX
-                mov ebx, eax
+                mov ebx, esi
                 sub ebx, Board_column
                 inc ebx
                 .IF byte ptr [realBoard+ebx]==MINE
@@ -109,7 +140,7 @@ Initializing   proc
 
 
         .IF edx != 0
-            mov ebx, eax
+            mov ebx, esi
             dec ebx
             .IF byte ptr [realBoard+ebx]==MINE
                 mov ecx, esi
@@ -118,7 +149,7 @@ Initializing   proc
         .ENDIF
 
         .IF edx != COL_MAX
-            mov ebx, eax
+            mov ebx, esi
             inc ebx
             .IF byte ptr [realBoard+ebx]==MINE
                 mov ecx, esi
@@ -131,7 +162,7 @@ Initializing   proc
 
         .IF eax != ROW_MAX
             .IF edx != 0
-                mov ebx, eax
+                mov ebx, esi
                 add ebx, Board_column
                 dec ebx
                 .IF byte ptr [realBoard+ebx]==MINE
@@ -140,7 +171,7 @@ Initializing   proc
                 .ENDIF
             .ENDIF
 
-            mov ebx, eax
+            mov ebx, esi
             add ebx, Board_column
             .IF byte ptr [realBoard+ebx]==MINE
                 mov ecx, esi
@@ -148,7 +179,7 @@ Initializing   proc
             .ENDIF
 
             .IF edx != COL_MAX
-                mov ebx, eax
+                mov ebx, esi
                 add ebx, Board_column
                 inc ebx
                 .IF byte ptr [realBoard+ebx]==MINE

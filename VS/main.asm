@@ -18,7 +18,7 @@ fgets PROTO C : ptr sbyte, : dword, : ptr sbyte
 fclose PROTO C : ptr sbyte
 fscanf PROTO C : ptr sbyte, :VARARG	
 
-Initializing  PROTO C
+Initializing  PROTO 
 
 WinMain     proto        ; Main window process
 MessageBoxA proto :DWORD, :DWORD, :DWORD, :DWORD       
@@ -33,6 +33,20 @@ include     user32.inc
 include     kernel32.inc
 include     msgame.inc
 
+extrn  	    gameState:dword
+extrn		flaggedMines :dword
+extrn		remainingMines:dword
+extrn		exploredCells :dword
+extrn		realBoard     :byte
+extrn		playBoard     :byte
+extrn		hintBoard     :byte
+extrn		row_directions :dword
+extrn		col_directions:dword
+extrn		mine_total    :dword
+extrn		Board_column  :dword
+extrn		Board_row     :dword
+extrn		Clicked_column:dword
+extrn		Clicked_row   :dword
 
 .data
 ClassName BYTE "Mine Sweeper", 0
@@ -603,7 +617,6 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         invoke PostQuitMessage, NULL
 
     .ELSEIF uMsg == WM_CREATE
-        mov eax, xxx
         ; menu
         invoke CreateMenu
         mov hMenu, eax
@@ -647,10 +660,11 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
 
     .ELSEIF uMsg == WM_LBUTTONUP 
         .if gameState == STATE_INIT
-            ; invoke Initializing
+            invoke resolveClickPosition, lParam
+            invoke Initializing
             mov gameState, STATE_PLAYING
             invoke changeButtonImage, lParam, green
-
+            ; invoke updateShow
         .elseif gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
             ;;;
