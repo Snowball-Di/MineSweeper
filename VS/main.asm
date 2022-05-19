@@ -66,7 +66,6 @@ ButtonText2     BYTE "Select the second file.", 0
 ButtonText3     BYTE "Compare1", "Compare2", 0
 
 
-
 menuCaptionText BYTE "Level of Difficulty", 0
 menuEasyText BYTE "Easy", 0
 menuMediumText BYTE "Medium", 0
@@ -138,6 +137,15 @@ mine_path       BYTE    "src\images\mine.bmp", 0
 exploded_path   BYTE    "src\images\exploded.bmp", 0
 
 
+; --- Global information ---
+extern playBoard        : byte
+extern hintBoard        : byte
+extern gameState        : dword
+extern mine_total       : dword
+extern Board_column     : dword
+extern Board_row        : dword
+extern Clicked_column   : dword
+extern Clicked_row      : dword
 
 .const
 Button1ID       equ 1
