@@ -33,20 +33,7 @@ include     user32.inc
 include     kernel32.inc
 include     msgame.inc
 
-extrn  	    gameState:dword
-extrn		flaggedMines :dword
-extrn		remainingMines:dword
-extrn		exploredCells :dword
-extrn		realBoard     :byte
-extrn		playBoard     :byte
-extrn		hintBoard     :byte
-extrn		row_directions :dword
-extrn		col_directions:dword
-extrn		mine_total    :dword
-extrn		Board_column  :dword
-extrn		Board_row     :dword
-extrn		Clicked_column:dword
-extrn		Clicked_row   :dword
+
 
 .data
 ClassName BYTE "Mine Sweeper", 0
@@ -57,6 +44,15 @@ error_title BYTE "Error", 0
 error_msg BYTE "[ERROR] There is no input!", 0
 scan_str BYTE "%d", 0ah, 0
 file_mode BYTE "r", 0
+
+HintText byte "Hint", 0
+
+win_title byte "Congratulations", 0
+win_msg byte "You win this one!", 0
+lose_title byte "Sorry", 0
+lose_msg byte "You lose this one!", 0
+hint_title byte "Hint", 0
+hint_msg byte "Press the key ""Ctrl"" and click the map to get the hint.", 0
 
 init_flag BYTE 0
 
@@ -99,10 +95,9 @@ hDC             HDC ?
 hMemDC          HDC ?
 
 ; game information
-led1    dd 0    ; the ends digit of LED
-led0    dd 0    ; the ones digit of LED
-
-
+led1        dd 0    ; the ends digit of LED
+led0        dd 0    ; the ones digit of LED
+windowWidth dd 0
 
 ; --- image resource ---
 mine_num_path   BYTE    "src\images\0.bmp", 0,
@@ -146,6 +141,7 @@ extern Board_column     : dword
 extern Board_row        : dword
 extern Clicked_column   : dword
 extern Clicked_row      : dword
+extern flaggedMinesTotal: dword
 
 .const
 Button1ID       equ 1
@@ -226,28 +222,26 @@ PromptError	endp
 ; paramter "change" can be 1, 0, -1
 ; you should invoke this function only if when the player labeled a mine
 ;
-showLED proc C  hWnd:HWND, change: DWORD
-    local cnt: dword
+showLED proc C  hWnd:HWND
     push ebx
     push ecx
     push edx
     push esi
     push edi
 
-    mov esi, led0
-    mov edi, led1
-    add esi, change
-
-    .if esi == 10
-        inc edi
+    mov eax, mine_total
+    .if flaggedMinesTotal >= eax
         xor esi, esi
-    .elseif esi == -1
-        dec edi
-        mov esi, 9
-    .endif
+        xor edi, edi
+    .else
+        xor edx, edx
+        sub eax, flaggedMinesTotal
+        mov ebx, 10
+        div bx
 
-    mov led0, esi
-    mov led1, edi
+        mov esi, edx
+        mov edi, eax
+    .endif
 
     invoke DestroyWindow, led1_handle
     invoke DestroyWindow, led0_handle
@@ -361,6 +355,7 @@ newGame proc C hWnd: HWND, difficulty: DWORD
         add esi, type buttons_all
     .endw
 
+    mov gameState, STATE_INIT
 
     ; refresh window and reset size of it
     .if difficulty == 1001
@@ -386,12 +381,14 @@ newGame proc C hWnd: HWND, difficulty: DWORD
     mov esi, Board_column
     mov edi, Board_row
 
-    invoke showLED, hWnd, 0
+    invoke showLED, hWnd
 
     mov eax, BLOCK_SIZE
     mul esi
     mov ebx, eax
     add ebx, 20
+
+    mov windowWidth, ebx
 
     mov eax, BLOCK_SIZE
     mul edi
@@ -557,8 +554,30 @@ resolveClickPosition endp
 ;
 ;
 ;
-updateShow proc C 
+initHint proc C hWnd: HWND
+    push ecx
+    push edx
+
+    mov eax, windowWidth
+    shr eax, 1
+    sub eax, 30
+    invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR HintText, \
+            WS_CHILD or WS_VISIBLE, \
+            eax, 10, 40, 40, hWnd, 333, hInstance, NULL
+
+    pop edx
+    pop ecx
+
+    ret
+initHint endp
+
+
+;
+;
+;
+updateShow proc C hWnd: HWND
     local cnt: dword, image: HWND
+    local flag_num: dword
 
     push ebx
     push ecx
@@ -571,12 +590,14 @@ updateShow proc C
     mov ebx, Board_row
     mul ebx
     mov cnt, eax
+
+    mov flag_num, 0
     
     xor ebx, ebx ; count the button
 
     .while ebx < cnt
-        mov esi, dword ptr playBoard[ebx*type buttons_all]
-        mov edi, dword ptr hintBoard[ebx*type buttons_all]
+        mov esi, dword ptr playBoard[ebx*type playBoard]
+        mov edi, dword ptr hintBoard[ebx*type hintBoard]
 
         .if edi != HINT_NONE
             .if edi == HINT_SAFE
@@ -584,6 +605,7 @@ updateShow proc C
             .elseif edi == HINT_MINE   
                 push red
             .endif
+
         .else
             .if esi >= NUMBER_0 && esi <= NUMBER_8
                 push mine_num[esi*type mine_num]
@@ -605,7 +627,10 @@ updateShow proc C
         invoke SendMessage, buttons_all[ebx*type buttons_all], STM_SETIMAGE, IMAGE_BITMAP, image
 
         inc ebx
+        inc flag_num
     .endw
+
+    invoke showLED, hWnd
 
     pop edi
     pop esi
@@ -645,6 +670,8 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
 
         invoke newGame, hWnd, 1001
 
+        invoke initHint, hWnd
+
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
 
@@ -655,39 +682,49 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
             invoke newGame, hWnd, 1002
         .elseif eax == 1003 ; hard
             invoke newGame, hWnd, 1003
-        .endif
-
-        ; click
-        mov ebx, eax
-        shr ebx, 16
-        .if bh == BN_CLICKED  
-            ; "lParam" is the handle of button
-            
-
+        .elseif eax == 333
+            invoke MessageBox, NULL, ADDR hint_msg, ADDR hint_title, MB_OK
         .endif
 
     .ELSEIF uMsg == WM_LBUTTONUP 
-        .if gameState == STATE_INIT
+        .if wParam == MK_CONTROL
             invoke resolveClickPosition, lParam
-            invoke Initializing
+            ;; hint
+
+        .elseif gameState == STATE_INIT
+            invoke resolveClickPosition, lParam
+            ;invoke Initializing
             mov gameState, STATE_PLAYING
-            invoke changeButtonImage, lParam, green
-            ; invoke updateShow
+            invoke updateShow, hWnd
+            ;invoke changeButtonImage, lParam, green
+
         .elseif gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
             ;;;
-            invoke updateShow
+            invoke updateShow, hWnd
+            ;invoke changeButtonImage, lParam, red
+
+
+            .if gameState == STATE_WIN
+                invoke MessageBox, NULL, ADDR win_msg, ADDR win_title, MB_OK
+
+            .elseif gameState == STATE_LOSE
+                invoke MessageBox, NULL, ADDR lose_msg, ADDR lose_title, MB_OK
+
+            .endif
+
         .else
-            ; invoke updateShow
             
         .endif
-        ; invoke showLED, hWnd, -1
 
     .ELSEIF uMsg == WM_RBUTTONUP 
         invoke resolveClickPosition, lParam
+        ;;; change flag
+
         ;;;
-        invoke updateShow
+        invoke updateShow, hWnd
         invoke changeButtonImage, lParam, flag
+
 
     .ELSE
         invoke DefWindowProc, hWnd, uMsg, wParam, lParam

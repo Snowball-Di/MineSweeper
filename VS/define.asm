@@ -5,7 +5,7 @@ option casemap:none
 include msgame.inc
 
 public  	gameState
-public		flaggedMines  
+public		flaggedMinesCorrect, flaggedMinesTotal
 public		remainingMines
 public		exploredCells 
 public		realBoard     
@@ -23,9 +23,10 @@ public		Clicked_row
 ; --- 游戏全局数据区 ---
 gameState       dword 0
 
-flaggedMines    dword 0
-remainingMines  dword 0
-exploredCells   dword 0
+flaggedMinesCorrect		dword 0
+flaggedMinesTotal		dword 0
+remainingMines			dword 0
+exploredCells			dword 0
 
 realBoard       byte MAX_CELLS DUP(0)
 playBoard       byte MAX_CELLS DUP(0)

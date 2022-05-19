@@ -1,4 +1,6 @@
 
+;Initializing proto
+
 .const
 
 ; --- 游戏难度设置 ---
