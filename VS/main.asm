@@ -693,7 +693,7 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
 
         .elseif gameState == STATE_INIT
             invoke resolveClickPosition, lParam
-            ;invoke Initializing
+            invoke Initializing
             mov gameState, STATE_PLAYING
             invoke updateShow, hWnd
             ;invoke changeButtonImage, lParam, green

@@ -7,10 +7,9 @@ include    msgame.inc
 srand  PROTO C :DWORD
 rand   PROTO C 
 time   PROTO C :DWORD
-
+memset PROTO C :DWORD,:BYTE,:DWORD
 
 extrn  	    gameState:dword
-extrn		flaggedMines :dword
 extrn		remainingMines:dword
 extrn		exploredCells :dword
 extrn		realBoard     :byte
@@ -43,6 +42,8 @@ Initializing   proc
     LOCAL COL_MAX: DWORD
     LOCAL Clicked_point: DWORD
     
+   
+
     push eax
 	push ebx
     push ecx
@@ -50,6 +51,10 @@ Initializing   proc
     push esi
     push edi
 	
+    invoke memset,addr realBoard,0,MAX_CELLS
+    invoke memset,addr playBoard,0,MAX_CELLS
+    invoke memset,addr hintBoard,0,MAX_CELLS
+
     xor edx,edx
     mov eax,Clicked_row
     mul Board_column
