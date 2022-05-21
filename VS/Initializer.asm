@@ -82,10 +82,14 @@ Initializing   proc
 
         cmp    edx,Clicked_point
         JE     USED
+        
+        xor    ecx,ecx
+        mov    cl,byte ptr [realBoard+edx]
+        cmp    cl,MINE
+        JE     USED
 
         mov    cl, MINE
-        mov    ebx, POSITION
-        mov    byte ptr [realBoard+ebx],cl
+        mov    byte ptr [realBoard+edx],cl
 
         INC    esi
 
