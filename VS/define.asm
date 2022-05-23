@@ -7,17 +7,17 @@ include msgame.inc
 public  	gameState
 public		flaggedMinesCorrect, flaggedMinesTotal
 public		remainingMines
-public		exploredCells 
-public		realBoard     
-public		playBoard     
-public		hintBoard    
+public		exploredCells
+public		realBoard
+public		playBoard
+public		hintBoard
 public		row_directions
 public		col_directions
-public		mine_total    
-public		Board_column  
-public		Board_row     
+public		mine_total
+public		Board_column
+public		Board_row
 public		Clicked_column
-public		Clicked_row   
+public		Clicked_row
 
 .data
 ; --- 游戏全局数据区 ---

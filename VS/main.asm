@@ -18,7 +18,8 @@ fgets PROTO C : ptr sbyte, : dword, : ptr sbyte
 fclose PROTO C : ptr sbyte
 fscanf PROTO C : ptr sbyte, :VARARG	
 
-Initializing  PROTO 
+Initializing  PROTO
+runHint PROTO
 
 WinMain     proto        ; Main window process
 MessageBoxA proto :DWORD, :DWORD, :DWORD, :DWORD       
@@ -683,12 +684,13 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         .elseif eax == 1003 ; hard
             invoke newGame, hWnd, 1003
         .elseif eax == 333
-            invoke MessageBox, NULL, ADDR hint_msg, ADDR hint_title, MB_OK
+            ;invoke MessageBox, NULL, ADDR hint_msg, ADDR hint_title, MB_OK
+            invoke runHint
         .endif
 
     .ELSEIF uMsg == WM_LBUTTONUP 
         .if wParam == MK_CONTROL
-            invoke resolveClickPosition, lParam
+            ;invoke resolveClickPosition, lParam
             ;; hint
 
         .elseif gameState == STATE_INIT
