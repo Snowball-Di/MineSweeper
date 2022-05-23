@@ -25,6 +25,8 @@ WinMain     proto        ; Main window process
 MessageBoxA proto :DWORD, :DWORD, :DWORD, :DWORD       
 MessageBox 	equ   <MessageBoxA>                        
 
+explore proto :dword, :dword
+flagThePosition proto :dword, :dword
 
 PromptError      proto                                 
 
@@ -597,8 +599,8 @@ updateShow proc C hWnd: HWND
     xor ebx, ebx ; count the button
 
     .while ebx < cnt
-        mov esi, dword ptr playBoard[ebx*type playBoard]
-        mov edi, dword ptr hintBoard[ebx*type hintBoard]
+        movsx esi, byte ptr playBoard[ebx*type playBoard]
+        movsx edi, byte ptr hintBoard[ebx*type hintBoard]
 
         .if edi != HINT_NONE
             .if edi == HINT_SAFE
@@ -697,12 +699,13 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
             invoke resolveClickPosition, lParam
             invoke Initializing
             mov gameState, STATE_PLAYING
+            invoke explore, Clicked_row, Clicked_column
             invoke updateShow, hWnd
             ;invoke changeButtonImage, lParam, green
 
         .elseif gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
-            ;;;
+            invoke explore, Clicked_row, Clicked_column 
             invoke updateShow, hWnd
             ;invoke changeButtonImage, lParam, red
 
@@ -722,10 +725,10 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
     .ELSEIF uMsg == WM_RBUTTONUP 
         invoke resolveClickPosition, lParam
         ;;; change flag
-
+        invoke flagThePosition, Clicked_row, Clicked_column 
         ;;;
         invoke updateShow, hWnd
-        invoke changeButtonImage, lParam, flag
+        ;invoke changeButtonImage, lParam, flag
 
 
     .ELSE

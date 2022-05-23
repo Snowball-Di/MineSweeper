@@ -52,8 +52,8 @@ Initializing   proc
     push edi
 	
     invoke memset,addr realBoard,0,MAX_CELLS
-    invoke memset,addr playBoard,0,MAX_CELLS
-    invoke memset,addr hintBoard,0,MAX_CELLS
+    invoke memset,addr playBoard,UNKNOWN,MAX_CELLS
+    invoke memset,addr hintBoard,HINT_NONE,MAX_CELLS
 
     xor edx,edx
     mov eax,Clicked_row
