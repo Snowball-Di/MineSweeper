@@ -544,6 +544,9 @@ resolveClickPosition proc C lParam: dword
     mov eax, lParam
     shr eax, 16
     sub eax, 60
+
+    jl INVALID_CLICK
+
     div dl
     xor ecx, ecx
     mov cl, al ; y
@@ -551,11 +554,21 @@ resolveClickPosition proc C lParam: dword
     mov Clicked_column, ebx
     mov Clicked_row, ecx
 
+    xor eax, eax
     pop edi
     pop esi
     pop edx
     pop ecx
     pop ebx
+    ret
+
+INVALID_CLICK:
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    mov eax, -1
     ret
 resolveClickPosition endp
 
@@ -608,7 +621,7 @@ updateShow proc C hWnd: HWND
         movsx esi, byte ptr playBoard[ebx*type playBoard]
         movsx edi, byte ptr hintBoard[ebx*type hintBoard]
 
-        .if edi != HINT_NONE
+        .if showHint && edi != HINT_NONE
             .if edi == HINT_SAFE
                 ;test
                 .if showHint == 1
@@ -718,37 +731,42 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
     .ELSEIF uMsg == WM_LBUTTONUP 
         .if wParam == MK_CONTROL
             .if gameState == STATE_PLAYING
-                invoke resolveClickPosition, lParam
-                ;; autoClick
-                invoke autoClick, Clicked_row, Clicked_column
-                invoke changeGameState
-                invoke updateShow, hWnd            
+                    invoke resolveClickPosition, lParam
+                .if eax == 0
+                    ;; autoClick
+                    invoke autoClick, Clicked_row, Clicked_column
+                    invoke changeGameState
+                    invoke updateShow, hWnd    
+                .endif        
             .endif
 
         .elseif gameState == STATE_INIT
             invoke resolveClickPosition, lParam
-            invoke Initializing
-            mov gameState, STATE_PLAYING
-            invoke explore, Clicked_row, Clicked_column
-            invoke changeGameState
-            invoke updateShow, hWnd
-            ;invoke changeButtonImage, lParam, green
-                
-            .if gameState == STATE_WIN
-                invoke MessageBox, NULL, ADDR win_msg, ADDR win_title, MB_OK
+            .if eax == 0
+                invoke Initializing
+                mov gameState, STATE_PLAYING
+                invoke explore, Clicked_row, Clicked_column
+                invoke changeGameState
+                invoke updateShow, hWnd
+                ;invoke changeButtonImage, lParam, green
+                    
+                .if gameState == STATE_WIN
+                    invoke MessageBox, NULL, ADDR win_msg, ADDR win_title, MB_OK
 
-            .elseif gameState == STATE_LOSE
-                invoke MessageBox, NULL, ADDR lose_msg, ADDR lose_title, MB_OK
+                .elseif gameState == STATE_LOSE
+                    invoke MessageBox, NULL, ADDR lose_msg, ADDR lose_title, MB_OK
 
+                .endif
             .endif
 
         .elseif gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
-            invoke explore, Clicked_row, Clicked_column 
-            invoke changeGameState
-            invoke updateShow, hWnd
+            .if eax == 0
+                invoke explore, Clicked_row, Clicked_column 
+                invoke changeGameState
+                invoke updateShow, hWnd
+            .endif
             ;invoke changeButtonImage, lParam, red
-
 
             .if gameState == STATE_WIN
                 invoke MessageBox, NULL, ADDR win_msg, ADDR win_title, MB_OK
@@ -766,8 +784,10 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         .if gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
             ;;; change flag
-            invoke flagThePosition, Clicked_row, Clicked_column 
-            invoke updateShow, hWnd
+            .if eax == 0
+                invoke flagThePosition, Clicked_row, Clicked_column 
+                invoke updateShow, hWnd
+            .endif
             ;invoke changeButtonImage, lParam, flag
         .endif
     .ELSE
