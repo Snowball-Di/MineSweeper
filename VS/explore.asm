@@ -4,9 +4,11 @@ option casemap:none
 
 include msgame.inc
 
-public explore ;探索
-public flagThePosition	;标旗
-public autoFlag	;自动插旗
+public singleExplore	;one pixel explore
+public flagThePosition	;flag the position
+public autoClick		;auto explore the neighbours
+public explore			;explore pixel and expand explore the neighbours
+public changeGameState	;check if win or lose
 
 
 ;external variables 
@@ -31,12 +33,7 @@ max_size	equ			MAX_CELLS
 sTop		dword		0
 sBase		dword		max_size dup(-1)
 sEnd		dword		0
-visited		byte		max_size dup(0) ;visit图
-
-;--------- cur col&row ---------
-cur_row		dword		0
-cur_col		dword		0
-
+visited		byte		max_size dup(0) ;visit
 
 .code
 sInit proc
@@ -58,33 +55,42 @@ sEmpty proc
 		ret
 sEmpty endp
 
-sPush proc	row:dword, col:dword	
+sPush proc	row:dword, col:dword
+	push ebx
 	mov		ebx, sTop
 	mov		eax, row
 	mov		[ebx], eax
 	add		ebx, 4
 	mov		eax, col
 	mov		[ebx], eax
+	add		ebx, 4
 	mov		sTop, ebx
+	pop ebx
 	ret
 sPush endp
 
-sPop proc row:dword, col:dword	
+sPop proc col:dword, row:dword	
+	push ebx
+	push ecx
 	mov ebx, sTop
 	sub ebx, 4
 	mov eax, [ebx]
-	mov [row], eax
+	mov ecx, row
+	mov [ecx], eax
 	sub ebx, 4
 	mov eax, [ebx]
-	mov [col], eax
+	mov ecx, col
+	mov [ecx], eax
 	mov sTop, ebx;
+	pop ecx
+	pop ebx
 	ret
 sPop endp
 
 
 accessPB proc row:dword, col:dword
 	mov eax, row
-	mul Board_row
+	mul Board_column
 	add eax, col
 	mov al, byte ptr playBoard[eax]
 	ret
@@ -92,13 +98,13 @@ accessPB endp
 
 accessAB proc row:dword, col:dword
 	mov eax, row
-	mul Board_row
+	mul Board_column
 	add eax, col
 	mov al, byte ptr realBoard[eax]
 	ret
 accessAB endp
 
-;判定
+;check if number
 isNumber proc cell:byte
 	mov		al, cell
 	.IF	al <= NUMBER_8
@@ -111,7 +117,7 @@ isNumber proc cell:byte
 	ret
 isNumber endp
 
-;check boundary检查是否越界
+;check boundary
 legalCor proc row:dword, col:dword
 	mov		eax, row
 	.IF	eax >= Board_row
@@ -161,75 +167,16 @@ flagThePosition proc row:dword, col:dword
 	ret
 flagThePosition	endp
 
-autoFlag proc row:dword, col:dword
-	local unknown:	byte
-	local nbrow:	dword
-	local nbcol:	dword
-	invoke accessAB, row, col
-	invoke isNumber, al
-	;操作位置是数字
-	cmp eax, 1
-	je autoflag
-	ret
-	autoflag:
-		xor al, al
-		mov unknown, 0
-		xor ecx, ecx
-
-		.while ecx < 8
-			mov		eax, row
-			add		eax, row_directions[ecx*4]
-			mov		nbrow, eax
-			mov		eax, col
-			add		eax, col_directions[ecx*4]
-			mov		nbcol, eax
-			; 检查是否越界
-			invoke	legalCor, nbrow, nbcol
-			.if eax == 0
-				.continue
-			.endif
-			; 获取该格子状态
-			invoke	accessPB, nbrow, nbcol
-			; 再执行相关操作
-			.if al == UNKNOWN
-				add unknown, 1
-			.endif
-			inc		ecx
-		.ENDW
-
-		mov ah, unknown
-		.if ah == al
-			.while ecx < 8
-				mov		eax, row
-				add		eax, row_directions[ecx*4]
-				mov		nbrow, eax
-				mov		eax, col
-				add		eax, col_directions[ecx*4]
-				mov		nbcol, eax
-				; 检查是否越界
-				invoke	legalCor, nbrow, nbcol
-				.if eax == 0
-					.continue
-				.endif
-				; 获取该格子状态
-				invoke	accessPB, nbrow, nbcol
-				; 再执行相关操作
-				.if al == UNKNOWN
-					invoke flagThePosition, nbrow, nbcol
-				.endif
-				inc		ecx
-			.ENDW
-		.endif
-	ret
-autoFlag endp
-
-explore proc	row:dword, col:dword
+singleExplore proc	row:dword, col:dword
 	push ebx
 	invoke accessPB, row, col
 	.if al == UNKNOWN
 		invoke accessAB, row, col
 		.if al == MINE
-			mov gameState, STATE_LOSE
+			mov eax, row
+			mul Board_column
+			add eax, col
+			mov byte ptr playBoard[eax], EXPLODED
 			pop ebx
 			ret
 		.endif
@@ -243,6 +190,228 @@ explore proc	row:dword, col:dword
 	.endif
 	pop ebx
 	ret
+singleExplore endp
+
+explore proc row:dword, col:dword
+	local nbrow:dword
+	local nbcol:dword
+	local cur_row:dword
+	local cur_col:dword
+	push ecx
+	push ebx
+	invoke accessAB, row, col
+	.if al == 0
+		invoke sInit
+		invoke sPush, row, col
+		mov		eax, Board_row
+		mul		Board_column
+		mov		ecx, eax
+		xor		ebx, ebx
+		.WHILE	ebx < ecx
+			mov		byte ptr visited[ebx], 0
+			add		ebx, 1
+		.ENDW
+
+		bfs:
+			invoke sEmpty
+			cmp al, 1
+			je return 
+			invoke sPop, addr cur_row, addr cur_col
+			invoke accessAB, cur_row, cur_col
+			.if al == 0
+			xor ecx, ecx
+				.while ecx < 8
+					mov		eax, cur_row
+					add		eax, row_directions[ecx*4]
+					mov		nbrow, eax
+					mov		eax, cur_col
+					add		eax, col_directions[ecx*4]
+					mov		nbcol, eax
+					invoke	legalCor, nbrow, nbcol
+					.if eax == 0
+						inc ecx
+						.continue
+					.endif
+
+					mov		eax, nbrow
+					mul		Board_column
+					add		eax, nbcol
+					mov		al, byte ptr visited[eax]
+
+					.if al == 1
+						inc ecx
+						.continue
+					.endif
+
+					mov		eax, nbrow
+					mul		Board_column
+					add		eax, nbcol
+					mov		byte ptr visited[eax], 1
+
+					invoke	accessPB, nbrow, nbcol
+					;.if al == UNKNOWN
+						invoke sPush, nbrow, nbcol
+					;.endif
+					inc		ecx
+				.ENDW
+			.endif
+			invoke singleExplore, cur_row, cur_col
+			jmp bfs
+	.endif
+
+	invoke singleExplore, row, col
+	return:
+	pop ecx
+	ret
 explore endp
+
+autoClick proc row:dword, col:dword
+	local flag:	byte
+	local nbrow:	dword
+	local nbcol:	dword
+	push ecx
+	invoke accessAB, row, col
+	invoke isNumber, al
+	cmp eax, 1
+	je autoclick
+	pop ecx
+	ret
+	autoclick:
+		xor al, al
+		mov flag, 0
+		xor ecx, ecx
+
+		.while ecx < 8
+			mov		eax, row
+			add		eax, row_directions[ecx*4]
+			mov		nbrow, eax
+			mov		eax, col
+			add		eax, col_directions[ecx*4]
+			mov		nbcol, eax
+			invoke	legalCor, nbrow, nbcol
+			.if eax == 0
+			inc ecx
+				.continue
+			.endif
+			invoke	accessPB, nbrow, nbcol
+			.if al == FLAGED
+				add flag, 1
+			.endif
+			inc		ecx
+		.ENDW
+
+		mov cl, flag
+		invoke accessAB, row, col
+		.if cl == al
+			xor ecx, ecx
+			.while ecx < 8
+				mov		eax, row
+				add		eax, row_directions[ecx*4]
+				mov		nbrow, eax
+				mov		eax, col
+				add		eax, col_directions[ecx*4]
+				mov		nbcol, eax
+				invoke	legalCor, nbrow, nbcol
+				.if eax == 0
+					inc ecx
+					.continue
+				.endif
+				invoke	accessPB, nbrow, nbcol
+				.if al == UNKNOWN
+					invoke explore, nbrow, nbcol
+				.endif
+				inc		ecx
+			.ENDW
+		.endif
+	pop ebx
+	pop ecx
+	ret
+autoClick endp
+
+checkWin proc
+	push ebx
+	push ecx
+	mov		eax, Board_row
+	mul		Board_column
+	mov		ecx, eax
+	xor		ebx, ebx
+	.WHILE	ebx < ecx
+		mov dl, byte ptr playBoard[ebx]
+		mov dh, byte ptr realBoard[ebx]
+		invoke isNumber, dh
+		.if al == 1
+			invoke isNumber, dl
+			cmp al, 0
+			je notwin
+		.endif
+		inc ebx
+	.ENDW
+	mov gameState, STATE_WIN
+	notwin:
+		pop ecx
+		pop ebx
+		ret
+checkWin endp
+
+showAnswer proc
+	push ebx
+	push ecx
+	push edx
+	mov		eax, Board_row
+	mul		Board_column
+	mov		ecx, eax
+	xor		ebx, ebx
+	.WHILE	ebx < ecx
+		mov dl, byte ptr playBoard[ebx]
+		mov dh, byte ptr realBoard[ebx]
+		.if dl == FLAGED
+			.if dh == MINE
+				inc ebx
+				.continue
+			.endif
+			mov byte ptr playBoard[ebx], FLAG_WRONG
+		.endif
+
+		.if dl == UNKNOWN
+			mov byte ptr playBoard[ebx], dh
+			.if dh == MINE
+			mov byte ptr playBoard[ebx], EXPLODED
+			.endif
+		.endif
+		inc ebx
+	.ENDW
+	pop edx
+	pop ecx
+	pop ebx
+	ret
+showAnswer endp
+
+checklose proc
+	push ebx
+	push ecx
+	mov		eax, Board_row
+	mul		Board_column
+	mov		ecx, eax
+	xor		ebx, ebx
+	.WHILE	ebx < ecx
+		mov al, byte ptr playBoard[ebx]
+		.if al == EXPLODED
+			mov gameState, STATE_LOSE
+			invoke showAnswer
+			jmp lose
+		.endif
+		inc ebx
+	.ENDW
+	lose:
+	pop ecx
+	pop ebx
+	ret
+checklose endp
+
+changeGameState proc
+	invoke checkWin
+	invoke checklose
+	ret
+changeGameState endp
 
 end

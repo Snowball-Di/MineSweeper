@@ -27,6 +27,8 @@ MessageBox 	equ   <MessageBoxA>
 
 explore proto :dword, :dword
 flagThePosition proto :dword, :dword
+autoClick proto :dword, :dword
+changeGameState proto
 
 PromptError      proto                                 
 
@@ -692,20 +694,27 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
 
     .ELSEIF uMsg == WM_LBUTTONUP 
         .if wParam == MK_CONTROL
-            ;invoke resolveClickPosition, lParam
-            ;; hint
+            .if gameState == STATE_PLAYING
+                invoke resolveClickPosition, lParam
+                ;; autoClick
+                invoke autoClick, Clicked_row, Clicked_column
+                invoke changeGameState
+                invoke updateShow, hWnd            
+            .endif
 
         .elseif gameState == STATE_INIT
             invoke resolveClickPosition, lParam
             invoke Initializing
             mov gameState, STATE_PLAYING
             invoke explore, Clicked_row, Clicked_column
+            invoke changeGameState
             invoke updateShow, hWnd
             ;invoke changeButtonImage, lParam, green
 
         .elseif gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
             invoke explore, Clicked_row, Clicked_column 
+            invoke changeGameState
             invoke updateShow, hWnd
             ;invoke changeButtonImage, lParam, red
 
@@ -722,15 +731,14 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
             
         .endif
 
-    .ELSEIF uMsg == WM_RBUTTONUP 
-        invoke resolveClickPosition, lParam
-        ;;; change flag
-        invoke flagThePosition, Clicked_row, Clicked_column 
-        ;;;
-        invoke updateShow, hWnd
-        ;invoke changeButtonImage, lParam, flag
-
-
+    .ELSEIF uMsg == WM_RBUTTONUP
+        .if gameState == STATE_PLAYING
+            invoke resolveClickPosition, lParam
+            ;;; change flag
+            invoke flagThePosition, Clicked_row, Clicked_column 
+            invoke updateShow, hWnd
+            ;invoke changeButtonImage, lParam, flag
+        .endif
     .ELSE
         invoke DefWindowProc, hWnd, uMsg, wParam, lParam
         ret
