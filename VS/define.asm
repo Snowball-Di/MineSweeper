@@ -18,10 +18,12 @@ public		Board_column
 public		Board_row
 public		Clicked_column
 public		Clicked_row
+public		showHint
 
 .data
 ; --- 游戏全局数据区 ---
 gameState       dword 0
+showHint		dword 0
 
 flaggedMinesCorrect		dword 0
 flaggedMinesTotal		dword 0

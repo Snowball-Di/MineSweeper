@@ -22,6 +22,7 @@ extrn		Board_column  :dword
 extrn		Board_row     :dword
 extrn		Clicked_column:dword
 extrn		Clicked_row   :dword
+extrn       showHint      :dword
 
 
 
@@ -57,6 +58,8 @@ Initializing   proc
     invoke memset,addr realBoard,0,MAX_CELLS
     invoke memset,addr playBoard,UNKNOWN,MAX_CELLS
     invoke memset,addr hintBoard,HINT_NONE,MAX_CELLS
+    xor eax, eax
+    mov showHint, 0
 
     xor edx,edx
     mov eax,Clicked_row
