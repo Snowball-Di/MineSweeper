@@ -710,6 +710,14 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
             invoke changeGameState
             invoke updateShow, hWnd
             ;invoke changeButtonImage, lParam, green
+                
+            .if gameState == STATE_WIN
+                invoke MessageBox, NULL, ADDR win_msg, ADDR win_title, MB_OK
+
+            .elseif gameState == STATE_LOSE
+                invoke MessageBox, NULL, ADDR lose_msg, ADDR lose_title, MB_OK
+
+            .endif
 
         .elseif gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
