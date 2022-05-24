@@ -3,7 +3,10 @@
 
 
 
-int Game::explore(const Pos& pos, std::vector<Pos>& cell_list)
+int Game::explore(const Pos& pos, std::vector<Pos>& cell_list) {
+    return 0;
+}
+/*
 {
     if (!this->board->inBounds(pos))
     {   // 边界检查
@@ -41,8 +44,12 @@ int Game::explore(const Pos& pos, std::vector<Pos>& cell_list)
 #endif
     return 0;
 }
+*/
 
-void Game::exploreClearCell(const Pos& pos, std::vector<Pos>& cell_list)
+void Game::exploreClearCell(const Pos& pos, std::vector<Pos>& cell_list) {
+
+}
+/*
 {   // 保证被点击单元格不是雷
     // 检查此单元格是否被探索过
     Cell seen_cell = this->board->cells[pos.row][pos.col];
@@ -70,9 +77,12 @@ void Game::exploreClearCell(const Pos& pos, std::vector<Pos>& cell_list)
         this->num_unexplored--;
         cell_list.push_back(pos);
     }
-}
+}*/
 
-int Game::mark(const Pos& pos)
+int Game::mark(const Pos& pos) {
+    return 0;
+}
+/*
 {
     if (!checkPos(pos))
     {   // 边界检查
@@ -102,8 +112,12 @@ int Game::mark(const Pos& pos)
 #endif
     return 0;
 }
+*/
 
-void Game::startGame(const Pos& pos)
+void Game::startGame(const Pos& pos) {
+
+}
+/*
 {
     if (this->state == GameState::playing)
     {
@@ -148,3 +162,4 @@ void Game::startGame(const Pos& pos)
     this->num_unexplored = int(HEIGHT) * int(WIDTH);
     this->state = GameState::playing;
 }
+*/

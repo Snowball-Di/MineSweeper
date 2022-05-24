@@ -31,7 +31,7 @@ class Board
 public:
     int width;
     int height;
-    bool isRef;
+    bool isRef; // 若该对象引用外部的数组，则析构时不释放T*
 
     Board(int w, int h, T init) {
         this->width = w;
@@ -69,6 +69,10 @@ public:
         return this->cells_array[pos.row * this->width + pos.col];
     }
 
+    void set(Pos pos, T data) {
+        this->cells_array[pos.row * this->width + pos.col] = data;
+    }
+
 private:
     T* cells_array;
 
@@ -81,7 +85,11 @@ enum class Cell : unsigned char
 };
 enum class Hint : unsigned char
 {
-
+    hint_none = 0,
+    hint_safe = 1,
+    hint_mine = 2,
+    hint_clue = 3,
+    hint_guess = 4
 };
 
 enum class GameState : int
