@@ -688,8 +688,11 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         .elseif eax == 1003 ; hard
             invoke newGame, hWnd, 1003
         .elseif eax == 333
-            ;invoke MessageBox, NULL, ADDR hint_msg, ADDR hint_title, MB_OK
-            invoke runHint
+            ;shr     eax, 16
+            ;.if ax == BN_CLICKED
+                ;invoke resolveClickPosition, lParam
+            invoke MessageBox, NULL, ADDR hint_msg, ADDR hint_title, MB_OK
+            ;.endif
         .endif
 
     .ELSEIF uMsg == WM_LBUTTONUP 

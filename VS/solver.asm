@@ -79,6 +79,7 @@ stack_full proc
 stack_full endp
 
 stack_push proc		row:dword, col:dword
+	push	ebx
 	; 将两个变量压栈
 	mov		ebx, stacktop ; 取栈顶指针
 	mov		eax, row
@@ -88,6 +89,8 @@ stack_push proc		row:dword, col:dword
 	mov		[ebx], eax
 	add		ebx, 4
 	mov		stacktop, ebx ; 写栈顶指针
+
+	pop		ebx
 	ret
 stack_push endp
 
@@ -258,6 +261,7 @@ doBFSSolvable proc	srcRow:dword, srcCol:dword
 			; 再检查是否越界
 			invoke	pointInBounds, neighborRow, neighborCol
 			.IF eax == 0
+				inc		ecx
 				.CONTINUE
 			.ENDIF
 			; 然后用合法坐标寻址得到单元格
@@ -293,6 +297,7 @@ doBFSSolvable proc	srcRow:dword, srcCol:dword
 				mov		neighborCol, eax
 				invoke	pointInBounds, neighborRow, neighborCol
 				.IF eax == 0
+					inc		ecx
 					.CONTINUE
 				.ENDIF
 				invoke	playBoardAccess, neighborRow, neighborCol
@@ -329,14 +334,16 @@ doBFSSolvable proc	srcRow:dword, srcCol:dword
 			; 检查是否越界
 			invoke	pointInBounds, neighborRow, neighborCol
 			.IF eax == 0
+				inc		ecx
 				.CONTINUE
 			.ENDIF
 			; 再检查是否访问
 			mov		ebx, neighborRow
 			mul		Board_column
 			add		ebx, neighborCol
-			mov		al, byte ptr bfsVisitFlags[eax]
+			mov		al, byte ptr bfsVisitFlags[ebx]
 			.IF al == 1
+				inc		ecx
 				.CONTINUE
 			.ENDIF
 

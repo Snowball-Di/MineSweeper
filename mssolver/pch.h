@@ -11,5 +11,8 @@
 #include "framework.h"
 
 #include <string>
+#include <vector>
+#include <queue>
+#include <stack>
 
 #endif //PCH_H
