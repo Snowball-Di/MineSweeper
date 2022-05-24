@@ -261,8 +261,8 @@ explore proc row:dword, col:dword
 
 	invoke singleExplore, row, col
 	return:
-	pop ecx
 	pop ebx
+	pop ecx
 	ret
 explore endp
 
