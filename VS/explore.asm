@@ -262,6 +262,7 @@ explore proc row:dword, col:dword
 	invoke singleExplore, row, col
 	return:
 	pop ecx
+	pop ebx
 	ret
 explore endp
 
@@ -270,10 +271,12 @@ autoClick proc row:dword, col:dword
 	local nbrow:	dword
 	local nbcol:	dword
 	push ecx
+	push ebx
 	invoke accessAB, row, col
 	invoke isNumber, al
 	cmp eax, 1
 	je autoclick
+	pop ebx
 	pop ecx
 	ret
 	autoclick:
