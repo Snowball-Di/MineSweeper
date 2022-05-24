@@ -33,6 +33,8 @@ Total       DWORD 0
 PLACED_MINE DWORD 0
 POSITION    DWORD 0
 TOTAL_SCALE DWORD 0
+Surnd_Button DWORD 8 dup(0)
+CNTSurPnt DWORD 0
 .code
 
 Initializing   proc
@@ -41,6 +43,7 @@ Initializing   proc
     LOCAL ROW_MAX: DWORD
     LOCAL COL_MAX: DWORD
     LOCAL Clicked_point: DWORD
+    
     
    
 
@@ -72,7 +75,48 @@ Initializing   proc
     MUL Board_row
     mov TOTAL_SCALE,eax
 
+    ;Mark the Surrounding of clicked button
+    mov ecx,0
+    xor ebx,ebx
+    mov ecx, -1
+
+LOOP_1:
+    cmp ecx,7
+    JE  break
+    add ecx,1
+    xor edx,edx
+    xor eax,eax
+
+    mov eax, Clicked_row
+    mov esi, dword ptr row_directions[ecx*4]
+    add eax,esi 
+    cmp eax, -1
+    JE  LOOP_1
+    cmp eax,Board_row
+    JE  LOOP_1
+
+    mul Board_column
+
+    mov edx,Clicked_column
+    mov esi, dword ptr col_directions[ecx*4]
+    add edx,esi
+    cmp edx, -1
+    JE  LOOP_1
+    cmp edx,Board_column
+    JE  LOOP_1
+
+    add eax,edx
+    mov DWORD ptr[Surnd_Button+ebx*4],eax
+    inc ebx
+
+    cmp ecx,7
+    JE  break
+    JMP LOOP_1
+    break:
+    mov CNTSurPnt,ebx
+
     xor esi,esi
+    xor ecx,ecx
     .while esi < mine_total
         USED:
         invoke rand
@@ -83,6 +127,13 @@ Initializing   proc
         cmp    edx,Clicked_point
         JE     USED
         
+        xor ebx,ebx
+        .while ebx < CNTSurPnt
+            cmp edx,dword ptr [Surnd_Button+ebx*4]
+            JE  USED
+            inc ebx
+        .endw
+
         xor    ecx,ecx
         mov    cl,byte ptr [realBoard+edx]
         cmp    cl,MINE
