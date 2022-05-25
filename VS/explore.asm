@@ -3,17 +3,22 @@
 option casemap:none
 
 include msgame.inc
+includelib msvcrt.lib
+includelib  mssolver.lib
 
 public singleExplore	;one pixel explore
 public flagThePosition	;flag the position
 public autoClick		;auto explore the neighbours
 public explore			;explore pixel and expand explore the neighbours
 public changeGameState	;check if win or lose
+public autoExplore		;auto explore the board safely
 
+CallHint proto c :dword, :dword, :dword, :dword, :dword,:dword, :dword
 
 ;external variables 
 extern playBoard:dword
 extern realBoard:dword
+extern hintBoard:dword
 
 extern Board_column:dword
 extern Board_row:dword
@@ -27,6 +32,8 @@ extern  showHint:dword
 
 extern flaggedMinesCorrect:dword
 extern flaggedMinesTotal:dword
+extern mine_total:dword
+
 
 .data
 ;------- stack --------
@@ -418,5 +425,52 @@ changeGameState proc
 	mov showHint, 0
 	ret
 changeGameState endp
+
+autoExplore proc
+	local explored: byte
+	push ebx
+	push ecx
+	mov explored, 0
+	invoke CallHint, Board_column, Board_row, mine_total, addr playBoard, addr hintBoard, Clicked_row, Clicked_column
+	xor ebx, ebx
+	xor ecx, ecx
+	.while ebx < Board_column
+        .while ecx < Board_row
+			mov eax, Board_column
+			mul ebx
+			add eax, ecx
+			mov dl, byte ptr hintBoard[eax]
+
+			.if dl == HINT_MINE
+				mov dl, byte ptr playBoard[eax]
+				.if dl == FLAGED	
+					inc ecx
+					.continue
+				.endif
+				invoke flagThePosition, ebx, ecx
+				inc ecx
+				.continue
+			.endif
+
+			.if dl == HINT_SAFE
+				.if explored == 0
+					invoke explore, ebx, ecx
+					mov Clicked_row, ebx
+					mov Clicked_column, ecx
+					mov explored, 1
+					inc ecx
+					.continue
+				.endif
+			.endif
+			inc ecx
+		.endw
+		xor ecx, ecx
+		inc ebx
+	.endw	
+	return:
+	pop ecx
+	pop ebx
+	ret 
+autoExplore endp
 
 end

@@ -18,6 +18,7 @@ fgets PROTO C : ptr sbyte, : dword, : ptr sbyte
 fclose PROTO C : ptr sbyte
 fscanf PROTO C : ptr sbyte, :VARARG	
 memset PROTO C :DWORD,:BYTE,:DWORD
+Sleep PROTO :DWORD
 
 Initializing  PROTO
 runHint PROTO
@@ -31,7 +32,7 @@ flagThePosition proto :dword, :dword
 autoClick proto :dword, :dword
 changeGameState proto
 CallHint proto c :dword, :dword, :dword, :dword, :dword,:dword, :dword
-
+autoExplore proto
 
 PromptError      proto                                 
 
@@ -708,23 +709,56 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         .elseif eax == 1003 ; hard
             invoke newGame, hWnd, 1003
         .elseif eax == 333
-            .if gameState == STATE_PLAYING
-                .if showHint == 0
+            .if gameState == STATE_PLAYING 
+                .while gameState == STATE_PLAYING
                     invoke CallHint, Board_column, Board_row, mine_total, addr playBoard, addr hintBoard, Clicked_row, Clicked_column
-                    mov     showHint, eax
+                    mov		eax, Board_row
+	                mul		Board_column
+	                mov		ecx, eax
+	                xor		ebx, ebx
+	                .WHILE	ebx < ecx
+                        mov al, byte ptr hintBoard[ebx]
+                        .if al == 0
+                            inc ebx
+                            .continue
+                        .endif
+                        jmp autoexplore
+	                .ENDW
+                    jmp outexplore
+
+                autoexplore:
                     mov     showHint, 1
                     invoke updateShow, hWnd
                     invoke memset,addr hintBoard,HINT_NONE,MAX_CELLS
-                    mov     eax, eax
-                .elseif showHint == 1
-                    mov showHint, 0
+                    invoke Sleep, 100
+
+                    invoke autoExplore
+                    invoke changeGameState
                     invoke updateShow, hWnd
+                    invoke Sleep, 100
+                .endw
+                .if gameState == STATE_WIN
+                    invoke MessageBox, NULL, ADDR win_msg, ADDR win_title, MB_OK
                 .endif
+                ; .if showHint == 0
+                ;     invoke CallHint, Board_column, Board_row, mine_total, addr playBoard, addr hintBoard, Clicked_row, Clicked_column
+                ;     mov     showHint, eax
+                ;     mov     showHint, 1
+                ;     invoke updateShow, hWnd
+                ;     invoke memset,addr hintBoard,HINT_NONE,MAX_CELLS
+                ;     mov     eax, eax
+                ; .elseif showHint == 1
+                ;     mov showHint, 0
+                ;     invoke updateShow, hWnd
+                ; .endif
             .endif
+
+            outexplore:
+
         .endif
 
     .ELSEIF uMsg == WM_LBUTTONUP 
-        ; Íæ¼ÒÏÂÒ»´Î²Ù×÷Ê±È¡Ïû
+        ; ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½Î²ï¿½ï¿½ï¿½Ê±È¡ï¿½ï¿½
         mov     showHint, 0
         .if wParam == MK_CONTROL
             .if gameState == STATE_PLAYING
@@ -778,7 +812,7 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         .endif
 
     .ELSEIF uMsg == WM_RBUTTONUP
-        ; Íæ¼ÒÏÂÒ»´Î²Ù×÷Ê±È¡Ïû
+        ; ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½Î²ï¿½ï¿½ï¿½Ê±È¡ï¿½ï¿½
         mov     showHint, 0
         .if gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
