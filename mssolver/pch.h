@@ -11,6 +11,7 @@
 #include "framework.h"
 
 #include <string>
+#include <array>
 #include <vector>
 #include <queue>
 #include <stack>

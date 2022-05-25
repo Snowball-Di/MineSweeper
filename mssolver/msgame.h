@@ -51,13 +51,11 @@ public:
     }
 
     ~Board() {
-        if (!this->isRef) {
-            delete[] this->cells_array;
-        }
+        // free problem.
     }
 
     bool inBounds(Pos pos) {
-        if (0 <= pos.row && pos.row <= width && 0 <= pos.col && pos.col <= height) {
+        if (0 <= pos.row && pos.row < width && 0 <= pos.col && pos.col < height) {
             return true;
         }
         else {
@@ -65,7 +63,7 @@ public:
         }
     }
 
-    T get(Pos pos) {
+    T get(Pos pos) const {
         return this->cells_array[pos.row * this->width + pos.col];
     }
 
@@ -81,7 +79,18 @@ private:
 // 枚举类实际值须与 msgame.inc 定义一致
 enum class Cell : unsigned char
 {
-
+    blank = 0,
+    n1 = 1,
+    n2 = 2,
+    n3 = 3,
+    n4 = 4,
+    n5 = 5,
+    n6 = 6,
+    n7 = 7,
+    n8 = 8,
+    unknown = 16,
+    marked = 32,
+    mine = 255,
 };
 enum class Hint : unsigned char
 {
@@ -109,22 +118,36 @@ private:
     Board<Cell>* board;
     GameState state;
 
+    int width, height, mines;
     int num_marked;
     int num_unexplored;
+    int isRef;
 
     void exploreClearCell(const Pos&, std::vector<Pos>&);
 public:
-    Game() {
-        this->state = GameState::init;
+    Game(int w, int h, int m, Board<Cell>* ptr=nullptr) : width(w), height(h), mines(m) {
+        if (ptr != nullptr) {
+            this->isRef = true;
+            this->state = GameState::playing;
+        }
+        else {
+            this->isRef = false;
+            this->state = GameState::init;
+        }
         this->real_board = nullptr;
-        this->board = nullptr;
+        this->board = ptr;
+        this->num_marked = 0;
+        this->num_unexplored = 0;
     }
     ~Game() {
-        if (this->real_board != nullptr)
+        if (this->real_board != nullptr) {
             delete this->real_board;
-        if (this->board != nullptr)
+        }
+        if (this->board != nullptr && this->isRef == false) {
             delete this->board;
+        }
     }
+    int getTotalMines() const { return mines; }
     int getUnexplored() const { return num_unexplored; }
     int getMarked() const { return num_marked; }
 
