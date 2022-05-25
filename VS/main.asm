@@ -618,19 +618,16 @@ updateShow proc C hWnd: HWND
     xor ebx, ebx ; count the button
 
     .while ebx < cnt
-        movsx esi, byte ptr playBoard[ebx*type playBoard]
-        movsx edi, byte ptr hintBoard[ebx*type hintBoard]
+        movzx esi, byte ptr playBoard[ebx*type playBoard]
+        movzx edi, byte ptr hintBoard[ebx*type hintBoard]
 
         .if showHint && edi != HINT_NONE
             .if edi == HINT_SAFE
-                ;test
-                .if showHint == 1
-                     push green
-                .endif
+                push green
             .elseif edi == HINT_MINE   
                 push red
             .else
-            ;TODO
+            ;TODO:hint type other images
                 push exploded
             .endif
 
@@ -647,9 +644,6 @@ updateShow proc C hWnd: HWND
                 push exploded
             .elseif esi == FLAG_WRONG 
                 push flag_wrong
-            .else
-            ;TODO
-                push exploded
             .endif
 
         .endif

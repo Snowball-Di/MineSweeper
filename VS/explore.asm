@@ -23,6 +23,7 @@ extern  Clicked_row:dword
 extern	row_directions:dword
 extern  col_directions:dword
 extern  gameState:dword
+extern  showHint：dword
 
 extern flaggedMinesCorrect:dword
 extern flaggedMinesTotal:dword
@@ -378,7 +379,7 @@ showAnswer proc
 		.if dl == UNKNOWN
 			mov byte ptr playBoard[ebx], dh
 			.if dh == MINE
-			mov byte ptr playBoard[ebx], EXPLODED
+			mov byte ptr playBoard[ebx], MINE
 			.endif
 		.endif
 		inc ebx
@@ -414,6 +415,7 @@ checklose endp
 changeGameState proc
 	invoke checkWin
 	invoke checklose
+	mov showHint, 0
 	ret
 changeGameState endp
 
