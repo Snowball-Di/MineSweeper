@@ -391,6 +391,8 @@ newGame proc C hWnd: HWND, difficulty: DWORD
         mov mine_total, EXPERT_MINES
     .endif
 
+    mov     flaggedMinesTotal, 0
+
     mov esi, Board_column
     mov edi, Board_row
 
