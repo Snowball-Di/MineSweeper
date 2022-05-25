@@ -23,7 +23,7 @@ extern  Clicked_row:dword
 extern	row_directions:dword
 extern  col_directions:dword
 extern  gameState:dword
-extern  showHint：dword
+extern  showHint:dword
 
 extern flaggedMinesCorrect:dword
 extern flaggedMinesTotal:dword
