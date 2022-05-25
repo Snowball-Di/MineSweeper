@@ -73,6 +73,7 @@ menuCaptionText BYTE "Level of Difficulty", 0
 menuEasyText BYTE "Beginner (9*9, 10)", 0
 menuMediumText BYTE "Intermediate (16*16, 40)", 0
 menuHardText BYTE "Expert (30*16, 99)", 0
+restartText byte    "Restart", 0
 
 ; handles
 hInstance       HINSTANCE 0
@@ -106,6 +107,7 @@ led1        dd 0    ; the ends digit of LED
 led0        dd 0    ; the ones digit of LED
 windowWidth dd 0
 windowHeight dd 0
+currentDifficulty  dd 1001
 
 ; --- image resource ---
 mine_num_path   BYTE    "src\images\0.bmp", 0,
@@ -683,11 +685,12 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         mov hSubMenu, eax
  
         invoke AppendMenu, hMenu, MF_POPUP, hSubMenu, offset menuCaptionText
+        invoke AppendMenu, hSubMenu, MF_STRING, 2000, offset restartText
+        invoke AppendMenu, hSubMenu, MF_SEPARATOR, 0, NULL
         invoke AppendMenu, hSubMenu, MF_STRING or MF_CHECKED, 1001, offset menuEasyText
-        invoke AppendMenu, hSubMenu, MF_SEPARATOR, 0, NULL
         invoke AppendMenu, hSubMenu, MF_STRING, 1002, offset menuMediumText
-        invoke AppendMenu, hSubMenu, MF_SEPARATOR, 0, NULL
         invoke AppendMenu, hSubMenu, MF_STRING, 1003, offset menuHardText
+        invoke AppendMenu, hSubMenu, MF_SEPARATOR, 0, NULL
 
         invoke SetMenu, hWnd, hMenu
 
@@ -702,11 +705,16 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
 
         ; change difficulty
         .if eax == 1001  ; easy
+            mov     currentDifficulty, eax
             invoke newGame, hWnd, 1001
         .elseif eax == 1002 ; midium
+            mov     currentDifficulty, eax
             invoke newGame, hWnd, 1002
         .elseif eax == 1003 ; hard
+            mov     currentDifficulty, eax
             invoke newGame, hWnd, 1003
+        .elseif eax == 2000
+            invoke newGame, hWnd, currentDifficulty
         .elseif eax == 333
             .if gameState == STATE_PLAYING
                 .if showHint == 0
