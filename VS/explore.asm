@@ -453,14 +453,11 @@ autoExplore proc
 			.endif
 
 			.if dl == HINT_SAFE
-				.if explored == 0
 					invoke explore, ebx, ecx
 					mov Clicked_row, ebx
 					mov Clicked_column, ecx
-					mov explored, 1
 					inc ecx
 					.continue
-				.endif
 			.endif
 			inc ecx
 		.endw
