@@ -434,8 +434,8 @@ autoExplore proc
 	invoke CallHint, Board_column, Board_row, mine_total, addr playBoard, addr hintBoard, Clicked_row, Clicked_column
 	xor ebx, ebx
 	xor ecx, ecx
-	.while ebx < Board_column
-        .while ecx < Board_row
+	.while ebx < Board_row
+        .while ecx < Board_column
 			mov eax, Board_column
 			mul ebx
 			add eax, ecx
