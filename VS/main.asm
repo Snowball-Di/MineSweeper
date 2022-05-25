@@ -17,6 +17,7 @@ fopen PROTO C : ptr sbyte, : ptr sbyte
 fgets PROTO C : ptr sbyte, : dword, : ptr sbyte
 fclose PROTO C : ptr sbyte
 fscanf PROTO C : ptr sbyte, :VARARG	
+memset PROTO C :DWORD,:BYTE,:DWORD
 
 Initializing  PROTO
 runHint PROTO
@@ -60,20 +61,18 @@ win_msg byte "You win this one!", 0
 lose_title byte "Sorry", 0
 lose_msg byte "You lose this one!", 0
 hint_title byte "Hint", 0
-hint_msg byte "Press the key ""Ctrl"" and click the map to get the hint.", 0
+;hint_msg byte "Press the key ""Ctrl"" and click the map to get the hint.", 0
 
 init_flag BYTE 0
 
 
 ButtonText1     BYTE "1", 0
-ButtonText2     BYTE "Select the second file.", 0
-ButtonText3     BYTE "Compare1", "Compare2", 0
 
 
 menuCaptionText BYTE "Level of Difficulty", 0
-menuEasyText BYTE "Easy", 0
-menuMediumText BYTE "Medium", 0
-menuHardText BYTE "Hard", 0
+menuEasyText BYTE "Beginner (9*9, 10)", 0
+menuMediumText BYTE "Intermediate (16*16, 40)", 0
+menuHardText BYTE "Expert (30*16, 99)", 0
 
 ; handles
 hInstance       HINSTANCE 0
@@ -98,14 +97,15 @@ red         HBITMAP ?
 green       HBITMAP ?
 flag_wrong  HBITMAP ?
 
-paint           PAINTSTRUCT <>
-hDC             HDC ?
-hMemDC          HDC ?
+;paint           PAINTSTRUCT <>
+;hDC             HDC ?
+;hMemDC          HDC ?
 
 ; game information
 led1        dd 0    ; the ends digit of LED
 led0        dd 0    ; the ones digit of LED
 windowWidth dd 0
+windowHeight dd 0
 
 ; --- image resource ---
 mine_num_path   BYTE    "src\images\0.bmp", 0,
@@ -257,13 +257,13 @@ showLED proc C  hWnd:HWND
 
     invoke CreateWindowEx, WS_EX_WINDOWEDGE, ADDR LEDClassName, ADDR LEDClassName, \
             WS_CHILD or WS_VISIBLE or SS_BITMAP, \
-            0, 10, 24, 40, hWnd, 6666, hInstance, NULL
+            10, 10, 24, 40, hWnd, 6666, hInstance, NULL
     mov led1_handle, eax
     invoke SendMessage, eax, STM_SETIMAGE, IMAGE_BITMAP, led_num[edi*type led_num]
     
     invoke CreateWindowEx, NULL, ADDR LEDClassName, ADDR LEDClassName, \
             WS_CHILD or WS_VISIBLE or SS_BITMAP, \
-            24, 10, 24, 40, hWnd, 6667, hInstance, NULL
+            34, 10, 24, 40, hWnd, 6667, hInstance, NULL
     mov led0_handle, eax
     invoke SendMessage, eax, STM_SETIMAGE, IMAGE_BITMAP, led_num[esi*type led_num]
   
@@ -394,18 +394,18 @@ newGame proc C hWnd: HWND, difficulty: DWORD
 
     mov eax, BLOCK_SIZE
     mul esi
-    mov ebx, eax
-    add ebx, 20
-
-    mov windowWidth, ebx
+    add eax, 20
+    mov windowWidth, eax
 
     mov eax, BLOCK_SIZE
     mul edi
-    add eax, 120
-    invoke MoveWindow, hWnd, 100, 150, ebx, eax, 1
+    add eax, 123
+    mov windowHeight, eax
+    invoke MoveWindow, hWnd, 100, 150, windowWidth, windowHeight, 1
+    ;invoke  SetWindowPos, hWnd, hWnd, 0, 0, windowWidth, windowHeight, SWP_NOMOVE or SWP_SHOWWINDOW
 
     invoke showMap, hWnd, esi, edi, BLOCK_SIZE, BLOCK_SIZE
-
+    
 
     ; modify the menu
     mov edi, 1001
@@ -716,12 +716,13 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         .elseif eax == 333
             .if gameState == STATE_PLAYING
                 .if showHint == 0
-                    mov showHint, 1
                     invoke CallHint, Board_column, Board_row, mine_total, addr playBoard, addr hintBoard, Clicked_row, Clicked_column
+                    mov     showHint, eax
+                    mov     showHint, 1
                     invoke updateShow, hWnd
-                .endif
-
-                .if showHint == 1
+                    invoke memset,addr hintBoard,HINT_NONE,MAX_CELLS
+                    mov     eax, eax
+                .elseif showHint == 1
                     mov showHint, 0
                     invoke updateShow, hWnd
                 .endif
@@ -729,6 +730,8 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         .endif
 
     .ELSEIF uMsg == WM_LBUTTONUP 
+        ; 玩家下一次操作时取消
+        mov     showHint, 0
         .if wParam == MK_CONTROL
             .if gameState == STATE_PLAYING
                     invoke resolveClickPosition, lParam
@@ -781,6 +784,8 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         .endif
 
     .ELSEIF uMsg == WM_RBUTTONUP
+        ; 玩家下一次操作时取消
+        mov     showHint, 0
         .if gameState == STATE_PLAYING
             invoke resolveClickPosition, lParam
             ;;; change flag
