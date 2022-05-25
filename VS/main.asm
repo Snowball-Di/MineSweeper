@@ -55,6 +55,7 @@ scan_str BYTE "%d", 0ah, 0
 file_mode BYTE "r", 0
 
 HintText byte "Hint", 0
+AutoSolveText byte "Auto Solve", 0
 
 win_title byte "Congratulations", 0
 win_msg byte "You win this one!", 0
@@ -599,6 +600,27 @@ initHint endp
 ;
 ;
 ;
+initAutoSolve proc C hWnd: HWND
+    push ecx
+    push edx
+
+    mov eax, windowWidth
+    shr eax, 1
+    add eax, 30
+    invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR AutoSolveText, \
+            WS_CHILD or WS_VISIBLE, \
+            eax, 10, 80, 40, hWnd, 334, hInstance, NULL
+
+    pop edx
+    pop ecx
+
+    ret
+initAutoSolve endp
+
+
+;
+;
+;
 updateShow proc C hWnd: HWND
     local cnt: dword, image: HWND
     local flag_num: dword
@@ -699,6 +721,7 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
         invoke newGame, hWnd, 1001
 
         invoke initHint, hWnd
+        invoke initAutoSolve, hWnd
 
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
@@ -729,6 +752,13 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
                     invoke updateShow, hWnd
                 .endif
             .endif
+        .elseif eax == 334
+            ; auto solve
+            ; todo
+            .if gameState == STATE_PLAYING
+
+            .endif
+
         .endif
 
     .ELSEIF uMsg == WM_LBUTTONUP 
