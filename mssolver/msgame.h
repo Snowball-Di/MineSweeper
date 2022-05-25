@@ -55,7 +55,7 @@ public:
     }
 
     bool inBounds(Pos pos) {
-        if (0 <= pos.row && pos.row < width && 0 <= pos.col && pos.col < height) {
+        if (0 <= pos.row && pos.row < height && 0 <= pos.col && pos.col < width) {
             return true;
         }
         else {
