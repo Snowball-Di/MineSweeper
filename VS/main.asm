@@ -63,6 +63,8 @@ win_msg byte "You win this one!", 0
 lose_title byte "Sorry", 0
 lose_msg byte "You lose this one!", 0
 hint_title byte "Hint", 0
+
+nosolution byte "No sulotion right now! Take your chance!"
 ;hint_msg byte "Press the key ""Ctrl"" and click the map to get the hint.", 0
 
 init_flag BYTE 0
@@ -743,6 +745,21 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
             .if gameState == STATE_PLAYING 
                 .if showHint == 0
                     invoke CallHint, Board_column, Board_row, mine_total, addr playBoard, addr hintBoard, Clicked_row, Clicked_column
+                    mov		eax, Board_row
+	                mul		Board_column
+	                mov		ecx, eax
+	                xor		ebx, ebx
+	                .WHILE	ebx < ecx
+                        mov al, byte ptr hintBoard[ebx]
+                        .if al == 0
+                            inc ebx
+                            .continue
+                        .endif
+                        jmp showhint
+	                .ENDW
+                    invoke MessageBox, NULL, ADDR nosolution, ADDR hint_title, MB_OK
+
+                    showhint:
                     mov     showHint, 1
                     invoke updateShow, hWnd
                     invoke memset,addr hintBoard,HINT_NONE,MAX_CELLS
@@ -751,8 +768,6 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
                     invoke updateShow, hWnd
                 .endif
             .endif
-
-            outexplore:
         .elseif eax == 334
             .if gameState == STATE_PLAYING 
                 .while gameState == STATE_PLAYING
@@ -769,6 +784,7 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
                         .endif
                         jmp autoexplore
 	                .ENDW
+                    invoke MessageBox, NULL, ADDR nosolution, ADDR hint_title, MB_OK
                     jmp outexplore
 
                 autoexplore:
@@ -782,6 +798,9 @@ handle_function proc hWnd: HWND, uMsg: UINT, wParam: WPARAM, lParam: LPARAM
                     invoke updateShow, hWnd
                     invoke Sleep, 100
                 .endw
+
+                outexplore:
+
                 .if gameState == STATE_WIN
                     invoke MessageBox, NULL, ADDR win_msg, ADDR win_title, MB_OK
                 .endif
